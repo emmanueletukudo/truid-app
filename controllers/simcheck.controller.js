@@ -1,4 +1,5 @@
 const axios = require("axios");
+let qs = require('qs');
 const base_URL = "https://eu.api.tru.id";
 const trueCredentials = require("../tru.json");
 
@@ -7,14 +8,17 @@ const SimCheckController = {
     try {
       const reqObj = {
         URI: `${base_URL}/oauth2/v1/token`,
+        //conver params to string suing qs package as recommended by the doc.
         params: qs.stringify({
           grant_type: "client_credentials",
           scope: "sim_check",
         }),
       };
 
+      
       //convert credentials to base64
-      let clientDetails = `${trueCredentials[0].client_id}:${trueCredentials[0].client_secret}`;
+      // console.log(trueCredentials.credentials[0].client_id);
+      let clientDetails = `${trueCredentials.credentials[0].client_id}:${trueCredentials.credentials[0].client_secret}`;
       let encoded_credentials = Buffer.from(clientDetails).toString("base64");
 
       const headers = {
