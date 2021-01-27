@@ -1,3 +1,4 @@
+const axios = require("axios");
 const base_URL = "https://eu.api.tru.id";
 const trueCredentials = require("../tru.json");
 
@@ -30,70 +31,69 @@ async function SimCheck(req, res) {
 }
 app.post('/sim-check', SimCheck)
 
-/**
- * Creates an Access Token withon `phone_check` scope.
- */
-async function getAccessToken() {
-    log('getAccessToken')
-
-    const url = `${API_BASE_URL}/oauth2/v1/token`
-    const params = qs.stringify({
-        grant_type: 'client_credentials',
-
-        // scope to use depends on product
-        scope: ['phone_check sim_check']
-    })
-
-    const toEncode = `${config.credentials[0].client_id}:${config.credentials[0].client_secret}`
-    const auth = Buffer.from(toEncode).toString('base64')
-    const requestHeaders = {
-        Authorization: `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
-
-    log('url', url)
-    log('params', params)
-    log('requestHeaders', requestHeaders)
-
-    const accessTokenResult = await axios.post(url, params, {
-        headers: requestHeaders
-    })
-
-    log('accessTokenResult.data', accessTokenResult.data)
-
-    return accessTokenResult.data
-}
-
-function log() {
-    if(DEBUG) {
-        console.debug.apply(null, arguments)
-    }
-}
-
 
 const SimCheckController = {
-    createToken: async () => {
+    
+    getAccessToken: async (req, res, next) => {
+        try {
+
+            const reqObj = {
+                URI: `${base_URL}/oauth2/v1/token`,
+                params: qs.stringify({ grant_type: 'client_credentials', scope: 'sim_check'}),
+            };
+
+            //convert credentials to base64
+            let clientDetails = `${trueCredentials[0].client_id}:${trueCredentials[0].client_secret}`;
+            let encoded_credentials = Buffer.from(clientDetails).toString("base64");
+            
+            const headers = {
+                Authorization: `Basic ${encoded_credentials}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+
+            const tokenRes =  await axios.post(reqObj.URI, reqObj.params, {
+                headers: headers,
+            });
+
+            res.json(tokenRes.data);
+
+        } catch (error) {
+            console.log(error);
+        }
+    },
+
+    check: async (req, res, next) => {
+        try {
+            let {phone} = req.body;
+            
+        } catch (error) {
+            console.log(error);
+        }
+    },
+
+    simCheck: async (phone) => {
         try {
             
+            const reqObj = {
+                URI: `${base_URL}/phone_check/v0.1/checks`,
+                params: {phone_number: phone},
+            };
+            let access_token = await this.getAccessToken().access_token;
+
+            const headers = {
+                Authorization: `Bearer ${access_token}`,
+                'Content-Type': 'application/json'
+            }
+
+            const simCheckRes = await axios.post(reqObj.URI, reqObj.params, {
+                headers: headers
+            });
+            return simCheckRes;
         } catch (error) {
             console.log(error);
         }
     }
 }
-app.post('/oauth2/v1/token', function(req, res, next) {
-
-    const url = base_URL;
-    let credentials = trueCredentials.credentials;
-  
-    var options = {
-      uri: baseUrl,
-      method: 'POST',
-      json: true,
-      headers: {
-        Authorization: Basic + {credentials},
-        "Content-Type": application/x-www-form-urlencoded,
-      }
-    };
 
 
-}) 
+module.exports = SimCheckController;
